@@ -72,3 +72,8 @@ lib/
   widgets/widgets.dart      banner, cards, caixa de endpoints, estados
 test/widget_test.dart       testes do modelo e das categorias
 ```
+
+## Documentação técnica
+
+A documentação detalhada de cada módulo, fluxo de dados e arquitetura do app está em [DOCUMENTACAO.md](DOCUMENTACAO.md).
+
