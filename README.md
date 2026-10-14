@@ -43,22 +43,31 @@ flutter run            # escolha o dispositivo na lista
 Para rodar numa plataforma específica: `flutter run -d chrome` (web) ou
 `flutter run -d windows`.
 
-### Android e iOS
+### Android
 
-O repositório traz as pastas `web/` e `windows/`, mas **não** `android/` nem
-`ios/`. Para gerá-las, rode dentro de `grand_line_wiki/`:
+O projeto já inclui a plataforma Android. Para testar em um celular, ative a
+depuração USB no aparelho, conecte-o ao computador e autorize a conexão:
 
 ```bash
-flutter create . --project-name grand_line_wiki --platforms=android,ios
+cd grand_line_wiki
+flutter devices
+flutter run -d <id-do-celular>
 ```
 
-O comando não sobrescreve arquivos que já existem.
+O `flutter run` compila, instala e abre o app no dispositivo escolhido. A tela
+de abertura aparece antes da tela inicial. Para gerar um APK de depuração
+manualmente, rode `flutter build apk --debug`; o arquivo fica em
+`build/app/outputs/flutter-apk/app-debug.apk`.
 
-**Android, versão de release:** confirme que
-`android/app/src/main/AndroidManifest.xml` tem a permissão de internet (o
-Flutter só a inclui por padrão nos modos debug e profile):
+**Android, versão de release:** mantenha a permissão de internet em
+`android/app/src/main/AndroidManifest.xml`:
 
-```xml
+```
+
+### iOS
+
+A pasta `ios/` não está incluída. A plataforma precisa ser gerada em um Mac
+com Xcode instalado.xml
 <uses-permission android:name="android.permission.INTERNET"/>
 ```
 

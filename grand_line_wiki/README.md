@@ -13,20 +13,31 @@ App Flutter baseado no wireframe mobile de alta fidelidade. Consome a
 
 ## Como rodar
 
-Este pacote traz o código (`lib/`, `test/`, `pubspec.yaml`), mas não as pastas
-de plataforma (`android/`, `ios/`). Gere-as dentro desta pasta:
+O projeto já inclui a plataforma Android. Para testar em um celular, ative a
+depuração USB no aparelho, conecte-o ao computador e autorize a conexão:
 
 ```bash
-flutter create . --project-name grand_line_wiki --platforms=android,ios
-flutter pub get
-flutter run
+flutter devices
+flutter run -d <id-do-celular>
 ```
 
-O `flutter create` não sobrescreve os arquivos que já existem aqui.
+O `flutter run` compila, instala e abre o app no dispositivo escolhido. A tela
+de abertura aparece antes da tela inicial. Para gerar um APK de depuração
+manualmente:
 
-**Android, versão de release:** confirme que
-`android/app/src/main/AndroidManifest.xml` tem a permissão de internet
-(o Flutter só a coloca por padrão nos modos debug e profile):
+```bash
+flutter build apk --debug
+```
+
+O APK fica em `build/app/outputs/flutter-apk/app-debug.apk`.
+
+Para desenvolver para iOS, gere a pasta `ios/` em um Mac com Xcode instalado.
+
+Baixe as dependências com `flutter pub get`. Para iniciar o app usando o
+dispositivo conectado, execute `flutter run`.
+
+**Android, versão de release:** mantenha a permissão de internet em
+`android/app/src/main/AndroidManifest.xml`:
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET"/>
@@ -76,4 +87,3 @@ test/widget_test.dart       testes do modelo e das categorias
 ## Documentação técnica
 
 A documentação detalhada de cada módulo, fluxo de dados e arquitetura do app está em [DOCUMENTACAO.md](DOCUMENTACAO.md).
-

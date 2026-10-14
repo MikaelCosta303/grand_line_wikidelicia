@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/home_shell.dart';
+import 'screens/splash_screen.dart';
 import 'theme.dart';
 import 'theme_controller.dart';
 
@@ -23,7 +23,7 @@ class GrandLineApp extends StatelessWidget {
         themeMode: themeController.mode,
         theme: buildTheme(Brightness.light),
         darkTheme: buildTheme(Brightness.dark),
-        home: const HomeShell(),
+        home: const SplashScreen(),
       ),
     );
   }

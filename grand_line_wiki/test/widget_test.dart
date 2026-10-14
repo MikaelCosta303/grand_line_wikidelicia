@@ -1,8 +1,28 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grand_line_wiki/data/categories.dart';
 import 'package:grand_line_wiki/models/wiki_item.dart';
+import 'package:grand_line_wiki/screens/home_shell.dart';
+import 'package:grand_line_wiki/screens/splash_screen.dart';
 
 void main() {
+  testWidgets('Splash screen opens the home screen automatically', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: SplashScreen()),
+    );
+
+    expect(find.text('GRAND LINE'), findsOneWidget);
+    expect(find.text('ONE PIECE WIKI'), findsOneWidget);
+    expect(find.bySemanticsLabel('Carregando'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 1600));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.byType(HomeShell), findsOneWidget);
+  });
+
   test('WikiItem lê nome, subtítulo, etiqueta, id e imagem', () {
     final item = WikiItem.fromJson({
       'id': 1,
