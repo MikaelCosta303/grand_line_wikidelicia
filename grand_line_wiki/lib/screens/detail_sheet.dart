@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../data/api_service.dart';
 import '../data/categories.dart';
+import '../language_controller.dart';
+import '../l10n/app_localizations.dart';
 import '../models/wiki_item.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
@@ -21,7 +23,7 @@ Future<void> showDetailSheet(
   );
 }
 
-/// Janela que sobe por baixo com os dados do item e o endpoint consultado.
+/// Janela que sobe por baixo com os dados do item.
 class DetailSheet extends StatefulWidget {
   const DetailSheet({
     super.key,
@@ -40,21 +42,40 @@ class DetailSheet extends StatefulWidget {
 
 class _DetailSheetState extends State<DetailSheet> {
   late WikiItem _item = widget.item;
+  late String _apiLanguageCode;
+  int _refreshGeneration = 0;
 
   @override
   void initState() {
     super.initState();
+    _apiLanguageCode = api.languageCode;
     _refresh();
   }
 
-  /// Consulta GET /{recurso}/en/{id} para trazer o registro completo.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final languageCode = languageController.apiLanguageCode;
+    if (languageCode == _apiLanguageCode) return;
+    _apiLanguageCode = languageCode;
+    _refresh();
+  }
+
+  /// Consulta o endpoint do idioma atual para trazer o registro completo.
   /// Se falhar, continua mostrando os dados que já vieram da lista.
   Future<void> _refresh() async {
     final id = widget.item.id;
     if (id == null) return;
+    final generation = ++_refreshGeneration;
+    final requestedLanguage = _apiLanguageCode;
     try {
       final fresh = await api.byId(widget.category, id);
-      if (!mounted || fresh.raw.isEmpty) return;
+      if (!mounted ||
+          generation != _refreshGeneration ||
+          requestedLanguage != _apiLanguageCode ||
+          fresh.raw.isEmpty) {
+        return;
+      }
       setState(() => _item = fresh);
     } catch (_) {
       // Mantém os dados da lista.
@@ -64,11 +85,10 @@ class _DetailSheetState extends State<DetailSheet> {
   @override
   Widget build(BuildContext context) {
     final p = Palette.of(context);
+    final strings = AppLocalizations.of(context)!;
     final c = widget.category;
+    final categoryName = c.localizedName(strings);
     final id = _item.id;
-    final endpoint = id != null
-        ? 'GET ${OnePieceApi.basePath}/${c.slug}/en/$id'
-        : 'GET ${OnePieceApi.basePath}/${c.slug}/en';
     final fields = _item.fields.where((f) => f.value != _item.title).toList();
 
     return Container(
@@ -108,10 +128,9 @@ class _DetailSheetState extends State<DetailSheet> {
               const SizedBox(height: 12),
               Text(_item.title, style: pirate(28, color: p.ink)),
               const SizedBox(height: 8),
-              _InfoRow('Categoria', c.name),
+              _InfoRow(strings.detailCategory, categoryName),
               for (final field in fields) _InfoRow(field.key, field.value),
-              if (id != null) _InfoRow('ID', id),
-              _InfoRow('Endpoint', endpoint, selectable: true),
+              if (id != null) _InfoRow(strings.detailId, id),
             ],
           ),
         ),
@@ -121,11 +140,10 @@ class _DetailSheetState extends State<DetailSheet> {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow(this.label, this.value, {this.selectable = false});
+  const _InfoRow(this.label, this.value);
 
   final String label;
   final String value;
-  final bool selectable;
 
   @override
   Widget build(BuildContext context) {
@@ -141,9 +159,7 @@ class _InfoRow extends StatelessWidget {
             child: Text(label, style: TextStyle(fontSize: 13, color: p.mut)),
           ),
           Expanded(
-            child: selectable
-                ? SelectableText(value, style: valueStyle)
-                : Text(value, style: valueStyle),
+            child: Text(value, style: valueStyle),
           ),
         ],
       ),

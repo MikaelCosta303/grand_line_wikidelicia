@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../theme.dart';
 import 'home_shell.dart';
 
@@ -37,6 +38,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     final palette = Palette.of(context);
+    final strings = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: ColoredBox(
@@ -86,7 +88,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
                 const SizedBox(height: 40),
                 Semantics(
-                  label: 'Carregando',
+                  label: strings.loading,
                   child: SizedBox(
                     width: 120,
                     child: LinearProgressIndicator(

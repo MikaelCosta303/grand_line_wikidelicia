@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../data/categories.dart';
+import '../language_controller.dart';
+import '../l10n/app_localizations.dart';
 import '../models/wiki_item.dart';
 import '../theme.dart';
 import '../theme_controller.dart';
@@ -114,7 +116,7 @@ class HeroBanner extends StatelessWidget {
   const HeroBanner({
     super.key,
     required this.title,
-    required this.subtitle,
+    this.subtitle = '',
     required this.emoji,
     this.chips = const [],
     this.compact = false,
@@ -174,15 +176,17 @@ class HeroBanner extends StatelessWidget {
                           title,
                           style: pirate(compact ? 28 : 32, color: Colors.white),
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          subtitle,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.92),
-                            fontSize: 13,
-                            height: 1.4,
+                        if (subtitle.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            subtitle,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.92),
+                              fontSize: 13,
+                              height: 1.4,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
@@ -267,16 +271,17 @@ class _SquareButton extends StatelessWidget {
   }
 }
 
-/// Cabeçalho: voltar (opcional), bússola, título e botão de tema.
+/// Cabeçalho: voltar (opcional), bússola, título, idioma e tema.
 class AppHeader extends StatelessWidget {
-  const AppHeader({super.key, this.title = 'Grand Line Wiki', this.onBack});
+  const AppHeader({super.key, this.title, this.onBack});
 
-  final String title;
+  final String? title;
   final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
     final p = Palette.of(context);
+    final strings = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
       child: Row(
@@ -284,7 +289,7 @@ class AppHeader extends StatelessWidget {
           if (onBack != null) ...[
             _SquareButton(
               icon: Icons.arrow_back_rounded,
-              tooltip: 'Voltar',
+              tooltip: strings.back,
               onTap: onBack!,
             ),
             const SizedBox(width: 10),
@@ -293,21 +298,83 @@ class AppHeader extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              title,
+              title ?? strings.appTitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: pirate(24, color: p.ink),
             ),
           ),
+          PopupMenuButton<Locale>(
+            tooltip: strings.languageTooltip,
+            initialValue: languageController.locale,
+            onSelected: (locale) async {
+              try {
+                await languageController.setLocale(locale);
+              } catch (_) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(strings.languageSaveFailed)),
+                );
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: const Locale('pt', 'BR'),
+                child: _LanguageMenuItem(
+                  label: strings.languagePortuguese,
+                  selected: languageController.locale ==
+                      const Locale('pt', 'BR'),
+                ),
+              ),
+              PopupMenuItem(
+                value: const Locale('en'),
+                child: _LanguageMenuItem(
+                  label: strings.languageEnglish,
+                  selected: languageController.locale == const Locale('en'),
+                ),
+              ),
+              PopupMenuItem(
+                value: const Locale('fr'),
+                child: _LanguageMenuItem(
+                  label: strings.languageFrench,
+                  selected: languageController.locale == const Locale('fr'),
+                ),
+              ),
+            ],
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Icon(Icons.language_rounded, size: 20, color: p.ink),
+            ),
+          ),
           _SquareButton(
             icon: Icons.contrast_rounded,
-            tooltip: 'Alternar tema',
+            tooltip: strings.toggleTheme,
             onTap: () => themeController.toggle(Theme.of(context).brightness),
           ),
         ],
       ),
     );
   }
+}
+
+class _LanguageMenuItem extends StatelessWidget {
+  const _LanguageMenuItem({required this.label, required this.selected});
+
+  final String label;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          SizedBox(
+            width: 24,
+            child: selected ? const Icon(Icons.check_rounded, size: 18) : null,
+          ),
+          Expanded(
+            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
+        ],
+      );
 }
 
 /// Miniatura: imagem da API, se existir; senão o emoji sobre gradiente.
@@ -472,115 +539,6 @@ class ItemRow extends StatelessWidget {
   }
 }
 
-/// Quadro "Endpoints consultados" de cada categoria.
-class EndpointBox extends StatelessWidget {
-  const EndpointBox({super.key, required this.lines});
-
-  final List<(String, String)> lines;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = Palette.of(context);
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
-      decoration: BoxDecoration(
-        color: p.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: p.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Text(
-              'ENDPOINTS CONSULTADOS',
-              style: TextStyle(
-                fontSize: 10,
-                letterSpacing: 1.5,
-                fontWeight: FontWeight.w800,
-                color: p.acc,
-              ),
-            ),
-          ),
-          for (final (label, path) in lines)
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              decoration: BoxDecoration(
-                border: Border(top: BorderSide(color: p.line)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 72,
-                    child: Text(
-                      label,
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: SelectableText(
-                      'GET $path',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: p.mut,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Faixa escura com o endpoint em uso (usada na busca).
-class EndpointPill extends StatelessWidget {
-  const EndpointPill(this.path, {super.key});
-
-  final String path;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: const Color(0xFF10233A),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text.rich(
-        TextSpan(
-          children: [
-            const TextSpan(
-              text: 'GET ',
-              style: TextStyle(
-                color: Color(0xFF7BE0A0),
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            TextSpan(text: path),
-          ],
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: Color(0xFFBFE3F0),
-          fontSize: 11.5,
-          fontFamily: 'monospace',
-        ),
-      ),
-    );
-  }
-}
-
 class SectionTitle extends StatelessWidget {
   const SectionTitle(this.title, {super.key, this.trailing});
 
@@ -652,6 +610,7 @@ class ErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Palette.of(context);
+    final strings = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 28),
       child: Column(
@@ -668,7 +627,7 @@ class ErrorView extends StatelessWidget {
           FilledButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: const Text('Tentar de novo'),
+            label: Text(strings.retry),
           ),
         ],
       ),

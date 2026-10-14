@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/categories.dart';
+import '../l10n/app_localizations.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
 import 'category_screen.dart';
@@ -12,23 +13,27 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Palette.of(context);
+    final strings = AppLocalizations.of(context)!;
     return SafeArea(
       child: CustomScrollView(
         slivers: [
           const SliverToBoxAdapter(child: AppHeader()),
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: HeroBanner(
-                title: 'Bem-vindo ao Grand Line',
-                subtitle: 'Personagens, frutas, bandos, ilhas e muito mais.',
+                title: strings.homeWelcome,
+                subtitle: strings.homeSubtitle,
                 emoji: '🏴‍☠️',
-                chips: ['16 categorias', 'JSON · REST'],
+                chips: [strings.categoryCount, 'JSON · REST'],
               ),
             ),
           ),
-          const SliverToBoxAdapter(
-            child: SectionTitle('Categorias', trailing: 'Escolha um endpoint'),
+          SliverToBoxAdapter(
+            child: SectionTitle(
+              strings.categories,
+              trailing: strings.homeSectionHint,
+            ),
           ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -56,8 +61,7 @@ class HomeScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
               child: Text(
-                'Dados da One Piece API (api-onepiece.com), uma API não oficial. '
-                'One Piece © Eiichiro Oda.',
+                strings.apiDisclaimer,
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 11, color: p.mut, height: 1.5),
               ),
@@ -83,6 +87,7 @@ class _CategoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Palette.of(context);
+    final strings = AppLocalizations.of(context)!;
     return Material(
       color: p.card,
       clipBehavior: Clip.antiAlias,
@@ -106,22 +111,12 @@ class _CategoryTile extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                category.name,
+                category.localizedName(strings),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w800,
-                ),
-              ),
-              Text(
-                category.listPath,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: p.acc,
                 ),
               ),
             ],

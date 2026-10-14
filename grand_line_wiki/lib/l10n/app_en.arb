@@ -1,0 +1,82 @@
+{
+  "@@locale": "en",
+  "appTitle": "Grand Line Wiki",
+  "languageTooltip": "Change language",
+  "languagePortuguese": "Português (Brasil)",
+  "languageEnglish": "English",
+  "languageFrench": "Français",
+  "languageSaveFailed": "Could not save the language preference.",
+  "back": "Back",
+  "toggleTheme": "Toggle theme",
+  "homeWelcome": "Welcome to the Grand Line",
+  "homeSubtitle": "Characters, fruits, crews, islands, and much more.",
+  "categoryCount": "16 categories",
+  "homeSectionHint": "Explore the world",
+  "categories": "Categories",
+  "apiDisclaimer": "Data from the One Piece API (api-onepiece.com), an unofficial API. One Piece © Eiichiro Oda.",
+  "search": "Search",
+  "itemCount": "{count} items",
+  "@itemCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "emptyCategory": "No items found.",
+  "retry": "Try again",
+  "detailCategory": "Category",
+  "detailId": "ID",
+  "homeTab": "Home",
+  "searchTab": "Search",
+  "searchHint": "Search in {category}…",
+  "@searchHint": {
+    "placeholders": {
+      "category": {}
+    }
+  },
+  "results": "Results",
+  "searchPrompt": "Enter a name to search in {category}.",
+  "@searchPrompt": {
+    "placeholders": {
+      "category": {}
+    }
+  },
+  "noSearchResults": "No results for \"{query}\".",
+  "@noSearchResults": {
+    "placeholders": {
+      "query": {}
+    }
+  },
+  "loading": "Loading",
+  "apiNotFound": "Not found (404).",
+  "apiStatusError": "The API returned error {status}.",
+  "@apiStatusError": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "apiTimeout": "The API took too long to respond.",
+  "apiOffline": "No internet connection or the API is unavailable.",
+  "apiUnexpected": "Unexpected response from the API.",
+  "apiItemNotFound": "Item not found.",
+  "apiEndpointNotFound": "This category is currently unavailable.",
+  "categorySagas": "Sagas",
+  "categoryFruits": "Devil Fruits",
+  "categoryChapters": "Chapters",
+  "categoryTomes": "Volumes",
+  "categoryEpisodes": "Episodes",
+  "categoryDials": "Dials",
+  "categoryMovies": "Movies",
+  "categorySwords": "Swords",
+  "categoryHakis": "Haki",
+  "categoryLuffyGears": "Luffy's Gears",
+  "categoryLuffyTechniques": "Luffy's Techniques",
+  "categoryCrews": "Crews",
+  "categoryCharacters": "Characters",
+  "categoryBoats": "Ships",
+  "categoryArcs": "Arcs",
+  "categoryLocates": "Locations"
+}

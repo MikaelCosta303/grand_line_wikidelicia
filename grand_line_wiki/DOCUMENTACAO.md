@@ -4,7 +4,7 @@ Este documento descreve a arquitetura, os fluxos de dados e a finalidade de cada
 
 ## Visão geral
 
-O Grand Line Wiki é um app de consulta de informações sobre o universo de One Piece. Ele consulta uma API REST pública e apresenta os dados em telas organizadas por categoria, com suporte a busca, detalhamento de itens e alternância de tema claro/escuro.
+O Grand Line Wiki é um app de consulta de informações sobre o universo de One Piece. Ele consulta uma API REST pública e apresenta os dados em telas organizadas por categoria, com suporte a busca, detalhamento de itens, alternância de tema claro/escuro e interface em português (Brasil), inglês e francês. A preferência de idioma fica salva no aparelho. Nomes próprios permanecem iguais em todos os idiomas; o idioma selecionado solicita descrições e outros conteúdos traduzíveis da API. Para pt-BR, que a API não oferece, são utilizados textos em inglês.
 
 O fluxo principal da aplicação é:
 
@@ -108,14 +108,17 @@ Responsabilidades:
 - Fazer requisições HTTP com timeout.
 - Normalizar respostas em listas de `WikiItem`.
 - Guardar resultados em cache em memória para evitar chamadas repetidas desnecessárias.
-- Traduzir erros para `ApiException` com mensagens amigáveis em português.
+- Representar falhas como `ApiException`, com mensagens localizadas na tela.
 
 Endpoints suportados:
 
-- `GET /v2/{resource}/en`
-- `GET /v2/{resource}/en/{id}`
-- `GET /v2/{resource}/en/search?name=`
-- `GET /v2/{resource}/en/count`
+- `GET /v2/{resource}/{language}`
+- `GET /v2/{resource}/{language}/{id}`
+- `GET /v2/{resource}/{language}/search?name=`
+- `GET /v2/{resource}/{language}/count`
+
+O código de idioma é `fr` para francês e `en` para inglês ou pt-BR. O cache
+de listas separa as respostas por categoria e idioma.
 
 Métodos principais:
 
@@ -148,7 +151,7 @@ A lógica usa listas de chaves tentativas para encontrar o nome, subtítulo, eti
 - `titleKeys`: `name`, `title`, `roman_name`, `label`, etc.
 - `subtitleKeys`: `job`, `type`, `description`, `origin`, etc.
 - `tagKeys`: `bounty`, `type`, `status`, `saga`, `number`, etc.
-- `imageKeys`: `image`, `img`, `picture`, `thumbnail`, etc.
+- `imageKeys`: `image`, `img`, `picture`, `thumbnail`, `filename`, etc.
 
 Essa abordagem torna o app resiliente a pequenas variações no formato da API.
 
@@ -181,8 +184,8 @@ Arquivo: `lib/screens/category_screen.dart`
 - Exibe:
   - cabeçalho com nome e emoji
   - banner principal
-  - quadro de endpoints consultados
   - lista de itens
+- As rotas e caminhos consultados não são exibidos na interface.
 - Usa `FutureBuilder` para controlar carregamento, erro e estado vazio.
 - Implementa `RefreshIndicator` para recarregar os dados da categoria com `refresh: true`.
 - Ao tocar em um item, abre a `DetailSheet`.
@@ -196,7 +199,6 @@ Arquivo: `lib/screens/detail_sheet.dart`
   - imagem/emoji da categoria
   - nome do item
   - categoria e campos extras do retorno da API
-  - endpoint usado para buscar o registro
 - Faz uma segunda chamada `byId` para tentar obter dados mais completos do item, mesmo que a listagem tenha sido parcial.
 - Mantém os dados da listagem caso a consulta de ID falhe.
 
@@ -209,7 +211,7 @@ Arquivo: `lib/screens/search_screen.dart`
 - Usa `Timer` com debounce de 400 ms para evitar consultas excessivas enquanto digita.
 - Aplica o mesmo padrão de `FutureBuilder`/estado de carregamento/erro/vazio.
 - Consulta o endpoint de busca da categoria selecionada, por exemplo:
-  - `GET /v2/characters/en/search?name=...`
+  - `GET /v2/characters/{language}/search?name=...`
 - Exibe os resultados em lista e permite abrir o detalhe do item.
 
 ## Componentes reutilizáveis
@@ -221,12 +223,10 @@ Arquivo: `lib/widgets/widgets.dart`
 Essa é a camada visual compartilhada da aplicação. Os principais componentes incluem:
 
 - `HeroBanner`: banner principal com gradiente, ondas e texto.
-- `AppHeader`: cabeçalho com título, botão de voltar e botão de tema.
+- `AppHeader`: cabeçalho com título, voltar, seletor de idioma e botão de tema.
 - `CategoryThumb`: thumbnail de item, com imagem da API ou emoji como fallback.
 - `Tag`: rótulo no formato de chip.
 - `ItemRow`: card de lista para item da categoria.
-- `EndpointBox`: painel com os endpoints da categoria.
-- `EndpointPill`: mini painel do endpoint em uso na busca.
 - `SectionTitle`: título de seção com estilo visual consistente.
 - `LoadingView`, `EmptyView`, `ErrorView`: estados reutilizáveis do app.
 
@@ -242,6 +242,7 @@ Também há alguns widgets de animação:
 Mesmo sem usar um gerenciador de estado complexo, o app mantém alguns estados globais simples:
 
 - `themeController`: controle do tema e persistência local.
+- `languageController`: idioma da interface e persistência local.
 - `api`: cliente único para todas as chamadas da API.
 
 Isso simplifica a arquitetura e reduz duplicação de código.

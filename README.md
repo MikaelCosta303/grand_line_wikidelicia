@@ -10,23 +10,27 @@ bandos, espadas, sagas, episódios e mais.
 ## Funcionalidades
 
 - **Início:** banner de boas-vindas e grade com as 16 categorias.
-- **Categoria:** banner com a contagem de itens, quadro "Endpoints consultados"
-  e a lista vinda da API. Puxe para baixo para atualizar.
-- **Detalhe:** janela que sobe por baixo com todos os campos do item e o
-  endpoint consultado.
+- **Categoria:** banner com a contagem de itens e a lista vinda da API. Puxe
+  para baixo para atualizar.
+- **Detalhe:** janela com os dados do item, sem exibir detalhes técnicos da API.
 - **Buscar:** busca por nome com filtro de categoria. Consulta a API enquanto
   você digita (com espera de 400 ms depois da última tecla).
 - **Tema claro/escuro:** botão no topo alterna o tema, e a escolha fica salva
   no aparelho.
+- **Idiomas:** seletor com português (Brasil), inglês e francês; a escolha
+  fica salva no aparelho. Os nomes próprios permanecem iguais; o idioma
+  selecionado controla a tradução de descrições e outros textos disponíveis
+  na API. Para pt-BR, que a API não oferece, são usados textos em inglês.
 
 ## Tecnologias
 
 | Item | Uso |
 | --- | --- |
 | [Flutter](https://flutter.dev) (Dart `>=3.5.0 <4.0.0`) | Interface, Material 3 |
+| `flutter_localizations` + `intl` | Interface em português, inglês e francês |
 | [`http`](https://pub.dev/packages/http) | Chamadas à API |
 | [`google_fonts`](https://pub.dev/packages/google_fonts) | Fontes Pirata One (títulos) e Nunito (texto) |
-| [`shared_preferences`](https://pub.dev/packages/shared_preferences) | Guardar o tema escolhido |
+| [`shared_preferences`](https://pub.dev/packages/shared_preferences) | Guardar tema e idioma escolhidos |
 
 ## Como rodar
 
@@ -62,14 +66,14 @@ manualmente, rode `flutter build apk --debug`; o arquivo fica em
 **Android, versão de release:** mantenha a permissão de internet em
 `android/app/src/main/AndroidManifest.xml`:
 
+```xml
+<uses-permission android:name="android.permission.INTERNET"/>
 ```
 
 ### iOS
 
 A pasta `ios/` não está incluída. A plataforma precisa ser gerada em um Mac
-com Xcode instalado.xml
-<uses-permission android:name="android.permission.INTERNET"/>
-```
+com Xcode instalado.
 
 ## Testes
 
@@ -78,9 +82,9 @@ cd grand_line_wiki
 flutter test
 ```
 
-Os testes (`test/widget_test.dart`) cobrem a leitura de dados do `WikiItem`
-(nome, subtítulo, etiqueta, id, imagem e valores aninhados) e a montagem dos
-quatro endpoints das 16 categorias.
+Os testes (`test/widget_test.dart`) cobrem a leitura de dados do `WikiItem`,
+a montagem dos endpoints, a troca/persistência de idioma e o roteamento/cache
+da API em francês e inglês.
 
 ## Como o app funciona
 
@@ -92,26 +96,33 @@ Tela  ──►  api (OnePieceApi)  ──►  One Piece API
 ```
 
 1. As telas (`screens/`) pedem dados à instância `api` de `OnePieceApi`.
-2. `OnePieceApi` monta a URL a partir do `slug` da categoria, faz o GET
-   (limite de 20 s), converte falhas em `ApiException` com mensagem em
-   português e guarda a lista de cada categoria em cache na memória.
+2. `OnePieceApi` seleciona o idioma da API a partir do idioma do app, faz o
+   GET (limite de 20 s), representa falhas como `ApiException` e mantém cache
+   separado por categoria e idioma. As mensagens de erro são localizadas na UI.
 3. Cada resposta vira uma lista de `WikiItem`. Como cada recurso da API tem
    campos diferentes, o `WikiItem` não depende de um formato fixo: procura
-   nome, subtítulo, etiqueta e imagem em chaves comuns e mostra todos os
-   campos simples no detalhe.
-4. Os componentes de `widgets/` desenham banner, cards, estados de
-   carregamento/vazio/erro e o quadro de endpoints.
+   nome, subtítulo, etiqueta e imagem em chaves comuns (incluindo `filename`,
+   usado nas respostas de frutas). O nome próprio permanece canônico entre
+   idiomas; os campos de descrição vêm no idioma retornado pela API.
+4. Os componentes de `widgets/` desenham banner, cards e estados de
+   carregamento/vazio/erro. Detalhes técnicos das requisições não aparecem na
+   interface.
 
-### Endpoints consultados
+### Rotas internas da API
 
 Base: `https://api.api-onepiece.com/v2`
 
 | Ação | Caminho |
 | --- | --- |
-| Listar | `/{recurso}/en` |
-| Por ID | `/{recurso}/en/{id}` |
-| Buscar | `/{recurso}/en/search?name=` |
-| Contagem | `/{recurso}/en/count` |
+| Listar | `/{recurso}/{idioma}` |
+| Por ID | `/{recurso}/{idioma}/{id}` |
+| Buscar | `/{recurso}/{idioma}/search?name=` |
+| Contagem | `/{recurso}/{idioma}/count` |
+
+As rotas são usadas internamente e não aparecem na interface. Nomes próprios
+permanecem iguais entre idiomas; o código de idioma seleciona descrições e
+outros conteúdos localizados. A API usa `fr` para francês e `en` para inglês
+ou pt-BR.
 
 ## Estrutura do projeto
 
@@ -133,7 +144,7 @@ grand_line_wiki/
 │   │   ├── detail_sheet.dart     janela de detalhe do item
 │   │   └── search_screen.dart    busca com filtro de categoria
 │   └── widgets/
-│       └── widgets.dart          banner, cabeçalho, cards, caixas de endpoint, estados
+│       └── widgets.dart          banner, cabeçalho, cards e estados
 ├── test/widget_test.dart         testes do modelo e das categorias
 ├── web/  windows/                pastas das plataformas já incluídas
 └── pubspec.yaml                  dependências do projeto

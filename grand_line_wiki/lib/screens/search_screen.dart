@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../data/api_service.dart';
 import '../data/categories.dart';
+import '../language_controller.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/localized_api_error.dart';
 import '../models/wiki_item.dart';
 import '../theme.dart';
 import '../widgets/widgets.dart';
@@ -23,10 +26,30 @@ class _SearchScreenState extends State<SearchScreen> {
   Timer? _debounce;
   int _catIndex = defaultSearchIndex;
   int _token = 0;
+  late String _apiLanguageCode;
   bool _loading = false;
-  String? _error;
+  Object? _error;
   String _query = '';
   List<WikiItem> _results = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _apiLanguageCode = api.languageCode;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final languageCode = languageController.apiLanguageCode;
+    if (languageCode == _apiLanguageCode) return;
+    _apiLanguageCode = languageCode;
+    if (_query.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _run();
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -71,7 +94,7 @@ class _SearchScreenState extends State<SearchScreen> {
     } catch (e) {
       if (!mounted || token != _token) return;
       setState(() {
-        _error = '$e';
+        _error = e;
         _results = const [];
         _loading = false;
       });
@@ -81,8 +104,8 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final p = Palette.of(context);
+    final strings = AppLocalizations.of(context)!;
     final category = categories[_catIndex];
-    final shown = _query.isEmpty ? '' : _query;
 
     return SafeArea(
       child: Column(
@@ -97,7 +120,9 @@ class _SearchScreenState extends State<SearchScreen> {
               textInputAction: TextInputAction.search,
               style: const TextStyle(fontWeight: FontWeight.w700),
               decoration: InputDecoration(
-                hintText: 'Buscar em ${category.name.toLowerCase()}…',
+                hintText: strings.searchHint(
+                  category.localizedName(strings).toLowerCase(),
+                ),
                 hintStyle: TextStyle(color: p.mut),
                 prefixIcon: Icon(Icons.search_rounded, color: p.mut),
                 suffixIcon: _query.isEmpty
@@ -136,7 +161,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 final selected = i == _catIndex;
                 return ChoiceChip(
                   showCheckmark: false,
-                  label: Text('${categories[i].emoji} ${categories[i].name}'),
+                  label: Text(
+                    '${categories[i].emoji} '
+                    '${categories[i].localizedName(strings)}',
+                  ),
                   selected: selected,
                   onSelected: (_) => _pickCategory(i),
                   selectedColor: p.acc,
@@ -151,11 +179,7 @@ class _SearchScreenState extends State<SearchScreen> {
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-            child: EndpointPill('${category.searchPath}$shown'),
-          ),
-          const SectionTitle('Resultados'),
+          SectionTitle(strings.results),
           Expanded(child: _buildResults(category)),
         ],
       ),
@@ -166,20 +190,25 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_loading) return const SingleChildScrollView(child: LoadingView());
     if (_error != null) {
       return SingleChildScrollView(
-        child: ErrorView(message: _error!, onRetry: _run),
+        child: ErrorView(
+          message: localizedApiError(context, _error!),
+          onRetry: _run,
+        ),
       );
     }
     if (_query.isEmpty) {
+      final strings = AppLocalizations.of(context)!;
       return SingleChildScrollView(
         child: EmptyView(
-          'Digite um nome para buscar em ${category.name}.',
+          strings.searchPrompt(category.localizedName(strings)),
           emoji: '🔎',
         ),
       );
     }
     if (_results.isEmpty) {
+      final strings = AppLocalizations.of(context)!;
       return SingleChildScrollView(
-        child: EmptyView('Nenhum resultado para "$_query".'),
+        child: EmptyView(strings.noSearchResults(_query)),
       );
     }
     return ListView.builder(

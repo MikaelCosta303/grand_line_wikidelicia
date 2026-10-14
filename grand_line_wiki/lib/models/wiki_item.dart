@@ -2,7 +2,8 @@
 ///
 /// Como cada recurso da One Piece API tem campos diferentes, o app não
 /// depende de um formato fixo: procura nome, subtítulo, etiqueta e imagem
-/// em chaves comuns e mostra todos os campos simples no detalhe.
+/// em chaves comuns e mostra os campos simples no detalhe. Mantém o nome
+/// próprio canônico, sem usar o campo alternativo localizado como título.
 class WikiItem {
   WikiItem(this.raw);
 
@@ -21,18 +22,24 @@ class WikiItem {
     'title',
     'label',
     'japanese_name',
-    'french_name',
   ];
   static const _subtitleKeys = [
+    'description',
     'job',
     'type',
-    'description',
     'roman_name',
     'crew',
     'origin',
     'status',
   ];
-  static const _tagKeys = ['bounty', 'type', 'status', 'saga', 'size', 'number'];
+  static const _tagKeys = [
+    'bounty',
+    'type',
+    'status',
+    'saga',
+    'size',
+    'number'
+  ];
   static const _imageKeys = [
     'image',
     'img',
@@ -40,7 +47,9 @@ class WikiItem {
     'thumbnail',
     'image_url',
     'url_image',
+    'filename',
   ];
+  static const _localizedNameKeys = {'french_name'};
 
   String? get id => _text(raw['id']);
 
@@ -66,7 +75,11 @@ class WikiItem {
   List<MapEntry<String, String>> get fields {
     final out = <MapEntry<String, String>>[];
     raw.forEach((key, value) {
-      if (key == 'id' || _imageKeys.contains(key)) return;
+      if (key == 'id' ||
+          _imageKeys.contains(key) ||
+          _localizedNameKeys.contains(key)) {
+        return;
+      }
       final text = _text(value);
       if (text == null) return;
       out.add(MapEntry(_humanize(key), text));

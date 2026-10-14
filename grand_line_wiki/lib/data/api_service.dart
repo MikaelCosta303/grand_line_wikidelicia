@@ -3,25 +3,37 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../language_controller.dart';
 import '../models/wiki_item.dart';
 import 'categories.dart';
 
-class ApiException implements Exception {
-  ApiException(this.message, {this.statusCode});
+enum ApiErrorType {
+  notFound,
+  status,
+  timeout,
+  offline,
+  unexpected,
+  itemNotFound,
+  endpointNotFound,
+}
 
-  final String message;
+class ApiException implements Exception {
+  const ApiException(this.type, {this.statusCode, this.path});
+
+  final ApiErrorType type;
   final int? statusCode;
+  final String? path;
 
   @override
-  String toString() => message;
+  String toString() => type.name;
 }
 
 /// Cliente da One Piece API. Os quatro endpoints consultados por categoria:
 ///
-/// - listar:   GET /v2/{recurso}/en
-/// - por ID:   GET /v2/{recurso}/en/{id}
-/// - buscar:   GET /v2/{recurso}/en/search?name=
-/// - contagem: GET /v2/{recurso}/en/count
+/// - listar:   GET /v2/{recurso}/{idioma}
+/// - por ID:   GET /v2/{recurso}/{idioma}/{id}
+/// - buscar:   GET /v2/{recurso}/{idioma}/search?name=
+/// - contagem: GET /v2/{recurso}/{idioma}/count
 class OnePieceApi {
   OnePieceApi({http.Client? client}) : _client = client ?? http.Client();
 
@@ -31,8 +43,14 @@ class OnePieceApi {
   final http.Client _client;
   final Map<String, List<WikiItem>> _cache = {};
 
-  Uri _uri(Category c, {String tail = '', Map<String, String>? query}) =>
-      Uri.https(host, '$basePath/${c.slug}/en$tail', query);
+  String get languageCode => languageController.apiLanguageCode;
+
+  Uri _uri(
+    Category c, {
+    required String languageCode,
+    String tail = '',
+    Map<String, String>? query,
+  }) => Uri.https(host, '$basePath/${c.slug}/$languageCode$tail', query);
 
   Future<dynamic> _get(Uri uri) async {
     try {
@@ -40,11 +58,14 @@ class OnePieceApi {
           .get(uri, headers: {'Accept': 'application/json'})
           .timeout(const Duration(seconds: 20));
       if (res.statusCode == 404) {
-        throw ApiException('Não encontrado (404).', statusCode: 404);
+        throw const ApiException(
+          ApiErrorType.notFound,
+          statusCode: 404,
+        );
       }
       if (res.statusCode < 200 || res.statusCode >= 300) {
         throw ApiException(
-          'A API respondeu com erro ${res.statusCode}.',
+          ApiErrorType.status,
           statusCode: res.statusCode,
         );
       }
@@ -53,26 +74,28 @@ class OnePieceApi {
     } on ApiException {
       rethrow;
     } on TimeoutException {
-      throw ApiException('A API demorou demais para responder.');
+      throw const ApiException(ApiErrorType.timeout);
     } on http.ClientException {
-      throw ApiException('Sem conexão com a internet ou API indisponível.');
+      throw const ApiException(ApiErrorType.offline);
     } on FormatException {
-      throw ApiException('Resposta inesperada da API.');
+      throw const ApiException(ApiErrorType.unexpected);
     }
   }
 
   Future<List<WikiItem>> list(Category c, {bool refresh = false}) async {
-    if (!refresh && _cache.containsKey(c.slug)) return _cache[c.slug]!;
+    final lang = languageCode;
+    final cacheKey = '$lang:${c.slug}';
+    if (!refresh && _cache.containsKey(cacheKey)) return _cache[cacheKey]!;
     try {
-      final items = _asItems(await _get(_uri(c)));
-      _cache[c.slug] = items;
+      final items = _asItems(await _get(_uri(c, languageCode: lang)));
+      _cache[cacheKey] = items;
       return items;
     } on ApiException catch (e) {
       if (e.statusCode == 404) {
         throw ApiException(
-          'O endpoint ${c.listPath} não foi encontrado. '
-          'Confira o nome do recurso na documentação da API.',
+          ApiErrorType.endpointNotFound,
           statusCode: 404,
+          path: c.listPathFor(lang),
         );
       }
       rethrow;
@@ -80,15 +103,30 @@ class OnePieceApi {
   }
 
   Future<WikiItem> byId(Category c, String id) async {
-    final data = await _get(_uri(c, tail: '/${Uri.encodeComponent(id)}'));
+    final data = await _get(
+      _uri(
+        c,
+        languageCode: languageCode,
+        tail: '/${Uri.encodeComponent(id)}',
+      ),
+    );
     final items = _asItems(data);
-    if (items.isEmpty) throw ApiException('Item não encontrado.');
+    if (items.isEmpty) {
+      throw const ApiException(ApiErrorType.itemNotFound);
+    }
     return items.first;
   }
 
   Future<List<WikiItem>> search(Category c, String name) async {
     try {
-      final data = await _get(_uri(c, tail: '/search', query: {'name': name}));
+      final data = await _get(
+        _uri(
+          c,
+          languageCode: languageCode,
+          tail: '/search',
+          query: {'name': name},
+        ),
+      );
       return _asItems(data);
     } on ApiException catch (e) {
       // Sem resultados costuma voltar como 404.
@@ -98,8 +136,14 @@ class OnePieceApi {
   }
 
   Future<int> count(Category c) async {
-    final n = _toInt(await _get(_uri(c, tail: '/count')));
-    if (n == null) throw ApiException('Resposta inesperada da API.');
+    final n = _toInt(
+      await _get(
+        _uri(c, languageCode: languageCode, tail: '/count'),
+      ),
+    );
+    if (n == null) {
+      throw const ApiException(ApiErrorType.unexpected);
+    }
     return n;
   }
 

@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../data/api_service.dart';
 import '../data/categories.dart';
+import '../language_controller.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/localized_api_error.dart';
 import '../models/wiki_item.dart';
 import '../widgets/widgets.dart';
 import 'detail_sheet.dart';
 
-/// Tela de uma categoria: banner, endpoints consultados e a lista da API.
+/// Tela de uma categoria: banner com contagem e lista da API.
 class CategoryScreen extends StatefulWidget {
   const CategoryScreen({super.key, required this.category, required this.index});
 
@@ -20,11 +23,22 @@ class CategoryScreen extends StatefulWidget {
 class _CategoryScreenState extends State<CategoryScreen> {
   late Future<List<WikiItem>> _items;
   late Future<int> _count;
+  late String _apiLanguageCode;
 
   @override
   void initState() {
     super.initState();
+    _apiLanguageCode = api.languageCode;
     _load();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final languageCode = languageController.apiLanguageCode;
+    if (languageCode == _apiLanguageCode) return;
+    _apiLanguageCode = languageCode;
+    _load(refresh: true);
   }
 
   void _load({bool refresh = false}) {
@@ -34,35 +48,27 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   Widget _header(BuildContext context) {
     final c = widget.category;
+    final strings = AppLocalizations.of(context)!;
+    final name = c.localizedName(strings);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AppHeader(title: c.name, onBack: () => Navigator.of(context).pop()),
+        AppHeader(title: name, onBack: () => Navigator.of(context).pop()),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: FutureBuilder<int>(
             future: _count,
             builder: (context, snap) => HeroBanner(
-              title: c.name,
-              subtitle: 'Base: ${OnePieceApi.host}${OnePieceApi.basePath}',
+              title: name,
               emoji: c.emoji,
               compact: true,
-              chips: snap.hasData ? ['${snap.data} itens'] : const [],
+              chips: snap.hasData
+                  ? [strings.itemCount('${snap.data}')]
+                  : const [],
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-          child: EndpointBox(
-            lines: [
-              ('Listar', c.listPath),
-              ('Por ID', c.idPath),
-              ('Buscar', c.searchPath),
-              ('Contagem', c.countPath),
-            ],
-          ),
-        ),
-        SectionTitle(c.name),
+        SectionTitle(name),
       ],
     );
   }
@@ -70,6 +76,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
   @override
   Widget build(BuildContext context) {
     final c = widget.category;
+    final strings = AppLocalizations.of(context)!;
     return Scaffold(
       body: SafeArea(
         child: FutureBuilder<List<WikiItem>>(
@@ -85,7 +92,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
               slivers.add(
                 SliverToBoxAdapter(
                   child: ErrorView(
-                    message: '${snap.error}',
+                    message: localizedApiError(context, snap.error!),
                     onRetry: () => setState(() => _load(refresh: true)),
                   ),
                 ),
@@ -94,8 +101,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
               final items = snap.data ?? const <WikiItem>[];
               if (items.isEmpty) {
                 slivers.add(
-                  const SliverToBoxAdapter(
-                    child: EmptyView('Nenhum item retornado por este endpoint.'),
+                  SliverToBoxAdapter(
+                    child: EmptyView(strings.emptyCategory),
                   ),
                 );
               } else {

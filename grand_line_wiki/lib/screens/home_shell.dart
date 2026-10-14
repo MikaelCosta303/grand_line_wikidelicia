@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import 'home_screen.dart';
 import 'search_screen.dart';
 
@@ -16,6 +17,7 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppLocalizations.of(context)!;
     return Scaffold(
       body: IndexedStack(
         index: _tab,
@@ -24,14 +26,14 @@ class _HomeShellState extends State<HomeShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
         onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: const [
+        destinations: [
           NavigationDestination(
             icon: Icon(Icons.home_rounded),
-            label: 'Início',
+            label: strings.homeTab,
           ),
           NavigationDestination(
             icon: Icon(Icons.search_rounded),
-            label: 'Buscar',
+            label: strings.searchTab,
           ),
         ],
       ),
