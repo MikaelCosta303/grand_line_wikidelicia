@@ -32,6 +32,11 @@ class WikiItem {
     'origin',
     'status',
   ];
+  static const _descriptionKeys = {
+    'description',
+    'description_en',
+    'description_fr',
+  };
   static const _tagKeys = [
     'bounty',
     'type',
@@ -55,9 +60,85 @@ class WikiItem {
 
   String get title => _first(_titleKeys) ?? 'Sem nome';
 
-  String? get subtitle => _first(_subtitleKeys, exclude: {title});
+  String? get subtitle => _firstEntry(_subtitleKeys, exclude: {title})?.value;
 
-  String? get tag => _first(_tagKeys, exclude: {title, subtitle ?? ''});
+  String? get subtitleFieldKey =>
+      _firstEntry(_subtitleKeys, exclude: {title})?.key;
+
+  String? get description => _first(_descriptionKeys.toList());
+
+  static bool isDescriptionField(String key) =>
+      _descriptionKeys.contains(key.toLowerCase().replaceAll(' ', '_'));
+
+  String? get tag =>
+      _firstEntry(_tagKeys, exclude: {title, subtitle ?? ''})?.value;
+
+  String? get tagFieldKey =>
+      _firstEntry(_tagKeys, exclude: {title, subtitle ?? ''})?.key;
+
+  List<String> get protectedNames {
+    final names = <String>{title};
+    raw.forEach((key, value) {
+      final normalizedKey = key.toLowerCase();
+      if (normalizedKey == 'name' ||
+          normalizedKey == 'title' ||
+          normalizedKey.contains('name') ||
+          normalizedKey.contains('alias') ||
+          normalizedKey.contains('nickname')) {
+        final text = _text(value);
+        if (text != null) names.addAll(text.split(', '));
+      }
+    });
+    return names.where((name) => name.length > 1).toList();
+  }
+
+  static bool isTranslatableField(String key, String value) {
+    final normalizedKey = key
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'^_+|_+$'), '');
+    if (normalizedKey.isEmpty ||
+        normalizedKey == 'id' ||
+        normalizedKey.endsWith('_id') ||
+        normalizedKey.contains('name') ||
+        normalizedKey.contains('alias') ||
+        normalizedKey.contains('nickname') ||
+        normalizedKey.contains('acronym') ||
+        normalizedKey.contains('abbreviation') ||
+        _canonicalValueKeys.contains(normalizedKey) ||
+        normalizedKey == 'code' ||
+        normalizedKey.endsWith('_code')) {
+      return false;
+    }
+    final trimmed = value.trim();
+    if (trimmed.isEmpty ||
+        Uri.tryParse(trimmed)?.hasScheme == true ||
+        RegExp(r'^[\d\s.,:%+-]+$').hasMatch(trimmed) ||
+        RegExp(r'^[A-Z][A-Z0-9]{1,}(?:[-.][A-Z0-9]+)*$')
+            .hasMatch(trimmed)) {
+      return false;
+    }
+    return true;
+  }
+
+  static const _canonicalValueKeys = {
+    'origin',
+    'crew',
+    'saga',
+    'arc',
+    'island',
+    'location',
+    'fruit',
+    'sword',
+    'ship',
+    'boat',
+    'technique',
+    'ability',
+    'skill',
+    'power',
+    'type',
+    'category',
+  };
 
   /// Endereço da imagem, se a resposta da API trouxer um.
   String? get imageUrl {
@@ -88,10 +169,17 @@ class WikiItem {
   }
 
   String? _first(List<String> keys, {Set<String> exclude = const {}}) {
+    return _firstEntry(keys, exclude: exclude)?.value;
+  }
+
+  MapEntry<String, String>? _firstEntry(
+    List<String> keys, {
+    Set<String> exclude = const {},
+  }) {
     for (final key in keys) {
       final value = _text(raw[key]);
       if (value != null && value.isNotEmpty && !exclude.contains(value)) {
-        return value;
+        return MapEntry(key, value);
       }
     }
     return null;

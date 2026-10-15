@@ -4,7 +4,7 @@ Este documento descreve a arquitetura, os fluxos de dados e a finalidade de cada
 
 ## Visão geral
 
-O Grand Line Wiki é um app de consulta de informações sobre o universo de One Piece. Ele consulta uma API REST pública e apresenta os dados em telas organizadas por categoria, com suporte a busca, detalhamento de itens, alternância de tema claro/escuro e interface em português (Brasil), inglês e francês. A preferência de idioma fica salva no aparelho. Nomes próprios permanecem iguais em todos os idiomas; o idioma selecionado solicita descrições e outros conteúdos traduzíveis da API. Para pt-BR, que a API não oferece, são utilizados textos em inglês.
+O Grand Line Wiki é um app de consulta de informações sobre o universo de One Piece. Ele consulta uma API REST pública e apresenta os dados em telas organizadas por categoria, com suporte a busca, detalhamento de itens, alternância de tema claro/escuro e interface em português (Brasil), inglês e francês. A preferência de idioma fica salva no aparelho. Nomes próprios, siglas e nomenclaturas canônicas permanecem originais. Francês usa os dados da API em francês e inglês usa inglês; como a API pode misturar idiomas nos próprios registros (inclusive em `/characters/en`), o app identifica o idioma de cada texto antes de traduzi-lo para o idioma selecionado. Títulos e termos reconhecidos como nomes ou siglas são preservados. O primeiro uso precisa baixar os modelos necessários com conexão à internet; depois, a tradução funciona offline.
 
 O fluxo principal da aplicação é:
 
@@ -24,7 +24,10 @@ grand_line_wiki/
 │   ├── theme_controller.dart
 │   ├── data/
 │   │   ├── api_service.dart
+│   │   ├── commons_image_service.dart
 │   │   └── categories.dart
+│   ├── services/
+│   │   └── description_translation_service.dart
 │   ├── models/
 │   │   └── wiki_item.dart
 │   ├── screens/
@@ -34,6 +37,8 @@ grand_line_wiki/
 │   │   ├── home_shell.dart
 │   │   └── search_screen.dart
 │   └── widgets/
+│       ├── item_description.dart
+│       ├── item_image.dart
 │       └── widgets.dart
 ├── test/
 │   └── widget_test.dart
@@ -144,6 +149,7 @@ A classe `WikiItem` encapsula um mapa `Map<String, dynamic>` em `raw` e expõe p
 - `subtitle`
 - `tag`
 - `imageUrl`
+- `description`
 - `fields`
 
 A lógica usa listas de chaves tentativas para encontrar o nome, subtítulo, etiqueta e imagem no JSON. Exemplos:
@@ -201,6 +207,9 @@ Arquivo: `lib/screens/detail_sheet.dart`
   - categoria e campos extras do retorno da API
 - Faz uma segunda chamada `byId` para tentar obter dados mais completos do item, mesmo que a listagem tenha sido parcial.
 - Mantém os dados da listagem caso a consulta de ID falhe.
+- Traduz campos textuais e rótulos da API para o idioma selecionado quando ele difere do idioma da resposta.
+- Preserva títulos, campos identificados como nomes/categorias canônicas e siglas.
+- Usa imagens já carregadas em cache local e exibe créditos/licenças do Commons quando aplicável.
 
 ### 11. Tela de busca
 
@@ -225,6 +234,8 @@ Essa é a camada visual compartilhada da aplicação. Os principais componentes 
 - `HeroBanner`: banner principal com gradiente, ondas e texto.
 - `AppHeader`: cabeçalho com título, voltar, seletor de idioma e botão de tema.
 - `CategoryThumb`: thumbnail de item, com imagem da API ou emoji como fallback.
+- `ItemImage`: carrega imagens da API ou do cache persistente do Commons.
+- `LocalizedText`: traduz textos descritivos e rótulos no aparelho conforme o idioma selecionado.
 - `Tag`: rótulo no formato de chip.
 - `ItemRow`: card de lista para item da categoria.
 - `SectionTitle`: título de seção com estilo visual consistente.
@@ -244,6 +255,10 @@ Mesmo sem usar um gerenciador de estado complexo, o app mantém alguns estados g
 - `themeController`: controle do tema e persistência local.
 - `languageController`: idioma da interface e persistência local.
 - `api`: cliente único para todas as chamadas da API.
+- `descriptionTranslationService`: identificação e tradução offline de textos de inglês, francês ou português para o idioma selecionado, com modelos baixados no primeiro uso.
+- `commonsImageService`: busca arquivos no Wikimedia Commons com licença permitida e salva imagem e atribuição em `getApplicationSupportDirectory()/item_images`.
+
+A busca consulta primeiro a página de mesmo título na API MediaWiki do One Piece Wiki (Fandom), confere a licença declarada na página do arquivo e só aceita licenças abertas explicitamente reconhecidas. Sem artigo exato, imagem ou licença reutilizável, consulta o Wikimedia Commons. No Commons, exige o nome canônico completo no título do arquivo, contexto explícito de One Piece e termos coerentes com a categoria (por exemplo, Devil Fruit para frutas). A validação prioriza precisão; quando a evidência não é suficiente, mantém o emoji em vez de mostrar uma imagem possivelmente errada. O cache de imagens usa uma versão própria para não reutilizar resultados obtidos por validações anteriores.
 
 Isso simplifica a arquitetura e reduz duplicação de código.
 
@@ -277,6 +292,7 @@ A aplicação tenta tratar os cenários mais comuns:
 - resposta vazia
 - JSON em formato inesperado
 - falha ao carregar imagem
+- ausência de tradução ou de imagem compatível
 
 Quando o erro acontece, os componentes `ErrorView` e `ApiException` convertem isso em mensagens legíveis para o usuário sem quebrar a tela.
 
@@ -301,6 +317,8 @@ Arquivo: `test/widget_test.dart`
 Os testes cobrem:
 
 - leitura de dados de `WikiItem`
+- preservação de nomes e siglas, com tradução de campos descritivos e rótulos
+- cache persistente de imagens licenciadas e atribuição
 - extração de nome, subtítulo e demais campos
 - montagem correta dos endpoints para cada categoria
 

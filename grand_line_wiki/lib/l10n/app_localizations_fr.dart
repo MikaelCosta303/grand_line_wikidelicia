@@ -125,6 +125,28 @@ class AppLocalizationsFr extends AppLocalizations {
       'Cette catégorie est actuellement indisponible.';
 
   @override
+  String get translationUnavailable =>
+      'Traduction indisponible ; texte original affiché.';
+
+  @override
+  String get imageUnavailable => 'L’image n’a pas pu être chargée.';
+
+  @override
+  String imageSource(String source) {
+    return 'Image provenant de $source';
+  }
+
+  @override
+  String commonsImageCredit(Object title, Object author) {
+    return '$title par $author';
+  }
+
+  @override
+  String commonsLicense(Object license) {
+    return 'Licence : $license';
+  }
+
+  @override
   String get categorySagas => 'Sagas';
 
   @override

@@ -34,6 +34,18 @@
   "apiUnexpected": "Resposta inesperada da API.",
   "apiItemNotFound": "Item não encontrado.",
   "apiEndpointNotFound": "Esta categoria está indisponível no momento.",
+  "translationUnavailable": "Tradução indisponível; exibindo o texto original.",
+  "imageUnavailable": "Não foi possível carregar a imagem.",
+  "imageSource": "Imagem de {source}",
+  "@imageSource": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "commonsImageCredit": "{title} por {author}",
+  "commonsLicense": "Licença: {license}",
   "categorySagas": "Sagas",
   "categoryFruits": "Akuma no Mi",
   "categoryChapters": "Capítulos",

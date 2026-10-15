@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/categories.dart';
 import '../l10n/app_localizations.dart';
 import '../theme.dart';
+import '../widgets/category_thumb.dart';
 import '../widgets/widgets.dart';
 import 'category_screen.dart';
 

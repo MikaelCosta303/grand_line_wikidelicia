@@ -305,6 +305,36 @@ abstract class AppLocalizations {
   /// **'This category is currently unavailable.'**
   String get apiEndpointNotFound;
 
+  /// No description provided for @translationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation unavailable; showing the original text.'**
+  String get translationUnavailable;
+
+  /// No description provided for @imageUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Image could not be loaded.'**
+  String get imageUnavailable;
+
+  /// No description provided for @imageSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Image from {source}'**
+  String imageSource(String source);
+
+  /// No description provided for @commonsImageCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} by {author}'**
+  String commonsImageCredit(Object title, Object author);
+
+  /// No description provided for @commonsLicense.
+  ///
+  /// In en, this message translates to:
+  /// **'License: {license}'**
+  String commonsLicense(Object license);
+
   /// No description provided for @categorySagas.
   ///
   /// In en, this message translates to:

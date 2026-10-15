@@ -6,6 +6,8 @@ import '../l10n/app_localizations.dart';
 import '../models/wiki_item.dart';
 import '../theme.dart';
 import '../theme_controller.dart';
+import 'item_description.dart';
+import 'item_image.dart';
 
 /// Gira o filho continuamente (a bússola do logo).
 class Spin extends StatefulWidget {
@@ -162,7 +164,8 @@ class HeroBanner extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(18, compact ? 16 : 20, 18, compact ? 38 : 46),
+              padding: EdgeInsets.fromLTRB(
+                  18, compact ? 16 : 20, 18, compact ? 38 : 46),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -322,8 +325,8 @@ class AppHeader extends StatelessWidget {
                 value: const Locale('pt', 'BR'),
                 child: _LanguageMenuItem(
                   label: strings.languagePortuguese,
-                  selected: languageController.locale ==
-                      const Locale('pt', 'BR'),
+                  selected:
+                      languageController.locale == const Locale('pt', 'BR'),
                 ),
               ),
               PopupMenuItem(
@@ -377,63 +380,17 @@ class _LanguageMenuItem extends StatelessWidget {
       );
 }
 
-/// Miniatura: imagem da API, se existir; senão o emoji sobre gradiente.
-class CategoryThumb extends StatelessWidget {
-  const CategoryThumb({
+class Tag extends StatelessWidget {
+  const Tag(
+    this.text, {
     super.key,
-    required this.emoji,
-    required this.index,
-    this.imageUrl,
-    this.size,
-    this.height,
-    this.emojiSize = 26,
-    this.radius = 12,
+    this.translate = false,
+    this.protectedTerms = const [],
   });
 
-  final String emoji;
-  final int index;
-  final String? imageUrl;
-  final double? size;
-  final double? height;
-  final double emojiSize;
-  final double radius;
-
-  @override
-  Widget build(BuildContext context) {
-    final h = height ?? size;
-    final box = Container(
-      width: size,
-      height: h,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        gradient: hueGradient(index),
-        borderRadius: BorderRadius.circular(radius),
-      ),
-      child: Text(emoji, style: TextStyle(fontSize: emojiSize)),
-    );
-    final url = imageUrl;
-    if (url == null) return box;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: SizedBox(
-        width: size,
-        height: h,
-        child: Image.network(
-          url,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stack) => box,
-          loadingBuilder: (context, child, progress) =>
-              progress == null ? child : box,
-        ),
-      ),
-    );
-  }
-}
-
-class Tag extends StatelessWidget {
-  const Tag(this.text, {super.key});
-
   final String text;
+  final bool translate;
+  final List<String> protectedTerms;
 
   @override
   Widget build(BuildContext context) {
@@ -444,16 +401,27 @@ class Tag extends StatelessWidget {
         color: p.gold.withValues(alpha: 0.28),
         borderRadius: BorderRadius.circular(99),
       ),
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 10.5,
-          fontWeight: FontWeight.w800,
-          color: p.ink,
-        ),
-      ),
+      child: translate
+          ? LocalizedText(
+              text,
+              maxLines: 1,
+              protectedTerms: protectedTerms,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                color: p.ink,
+              ),
+            )
+          : Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                color: p.ink,
+              ),
+            ),
     );
   }
 }
@@ -476,8 +444,17 @@ class ItemRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = Palette.of(context);
-    final subtitle = item.subtitle;
+    final description = item.description;
+    final subtitle = description ?? item.subtitle;
     final tag = item.tag;
+    final subtitleKey = description == null
+        ? item.subtitleFieldKey ?? 'subtitle'
+        : 'description';
+    final translateSubtitle =
+        subtitle != null && WikiItem.isTranslatableField(subtitleKey, subtitle);
+    final translateTag = tag != null &&
+        WikiItem.isTranslatableField(item.tagFieldKey ?? 'tag', tag);
+    final protectedNames = item.protectedNames;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
@@ -493,10 +470,10 @@ class ItemRow extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             child: Row(
               children: [
-                CategoryThumb(
-                  emoji: category.emoji,
+                ItemImage(
+                  category: category,
+                  item: item,
                   index: index,
-                  imageUrl: item.imageUrl,
                   size: 54,
                 ),
                 const SizedBox(width: 12),
@@ -514,12 +491,19 @@ class ItemRow extends StatelessWidget {
                         ),
                       ),
                       if (subtitle != null)
-                        Text(
-                          subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 12, color: p.mut),
-                        ),
+                        translateSubtitle
+                            ? LocalizedText(
+                                subtitle,
+                                maxLines: 1,
+                                protectedTerms: protectedNames,
+                                style: TextStyle(fontSize: 12, color: p.mut),
+                              )
+                            : Text(
+                                subtitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: 12, color: p.mut),
+                              ),
                     ],
                   ),
                 ),
@@ -527,7 +511,11 @@ class ItemRow extends StatelessWidget {
                   const SizedBox(width: 8),
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 110),
-                    child: Tag(tag),
+                    child: Tag(
+                      tag,
+                      translate: translateTag,
+                      protectedTerms: protectedNames,
+                    ),
                   ),
                 ],
               ],

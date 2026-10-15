@@ -34,6 +34,18 @@
   "apiUnexpected": "Réponse inattendue de l’API.",
   "apiItemNotFound": "Élément introuvable.",
   "apiEndpointNotFound": "Cette catégorie est actuellement indisponible.",
+  "translationUnavailable": "Traduction indisponible ; texte original affiché.",
+  "imageUnavailable": "L’image n’a pas pu être chargée.",
+  "imageSource": "Image provenant de {source}",
+  "@imageSource": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "commonsImageCredit": "{title} par {author}",
+  "commonsLicense": "Licence : {license}",
   "categorySagas": "Sagas",
   "categoryFruits": "Fruits du Démon",
   "categoryChapters": "Chapitres",

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../data/api_service.dart';
+import '../data/commons_image_service.dart';
 import '../data/categories.dart';
 import '../language_controller.dart';
 import '../l10n/app_localizations.dart';
 import '../models/wiki_item.dart';
+import '../services/description_translation_service.dart';
 import '../theme.dart';
-import '../widgets/widgets.dart';
+import '../widgets/item_description.dart';
+import '../widgets/item_image.dart';
 
 Future<void> showDetailSheet(
   BuildContext context,
@@ -30,11 +33,15 @@ class DetailSheet extends StatefulWidget {
     required this.category,
     required this.item,
     required this.index,
+    this.imageLoader,
+    this.descriptionTranslator,
   });
 
   final Category category;
   final WikiItem item;
   final int index;
+  final Future<CachedItemImage?> Function(Category, WikiItem)? imageLoader;
+  final DescriptionTranslation? descriptionTranslator;
 
   @override
   State<DetailSheet> createState() => _DetailSheetState();
@@ -42,6 +49,7 @@ class DetailSheet extends StatefulWidget {
 
 class _DetailSheetState extends State<DetailSheet> {
   late WikiItem _item = widget.item;
+  late Future<CachedItemImage?> _itemImage;
   late String _apiLanguageCode;
   int _refreshGeneration = 0;
 
@@ -49,8 +57,12 @@ class _DetailSheetState extends State<DetailSheet> {
   void initState() {
     super.initState();
     _apiLanguageCode = api.languageCode;
+    _itemImage = _loadImage(_item);
     _refresh();
   }
+
+  Future<CachedItemImage?> _loadImage(WikiItem item) =>
+      (widget.imageLoader ?? commonsImageService.load)(widget.category, item);
 
   @override
   void didChangeDependencies() {
@@ -76,7 +88,10 @@ class _DetailSheetState extends State<DetailSheet> {
           fresh.raw.isEmpty) {
         return;
       }
-      setState(() => _item = fresh);
+      setState(() {
+        _item = fresh;
+        _itemImage = _loadImage(fresh);
+      });
     } catch (_) {
       // Mantém os dados da lista.
     }
@@ -117,19 +132,41 @@ class _DetailSheetState extends State<DetailSheet> {
                   ),
                 ),
               ),
-              CategoryThumb(
-                emoji: c.emoji,
-                index: widget.index,
-                imageUrl: _item.imageUrl,
-                height: 120,
-                emojiSize: 62,
-                radius: 16,
+              FutureBuilder<CachedItemImage?>(
+                future: _itemImage,
+                builder: (context, snapshot) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ItemImage(
+                      category: c,
+                      item: _item,
+                      index: widget.index,
+                      height: 120,
+                      emojiSize: 62,
+                      radius: 16,
+                      imageLoader: widget.imageLoader,
+                    ),
+                    if (snapshot.data?.attribution case final attribution?)
+                      imageAttributionLinks(context, attribution),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               Text(_item.title, style: pirate(28, color: p.ink)),
               const SizedBox(height: 8),
               _InfoRow(strings.detailCategory, categoryName),
-              for (final field in fields) _InfoRow(field.key, field.value),
+              for (final field in fields)
+                _InfoRow(
+                    field.key,
+                    field.value,
+                    translateLabel: true,
+                    translateValue: WikiItem.isTranslatableField(
+                      field.key,
+                      field.value,
+                    ),
+                    translator: widget.descriptionTranslator,
+                    protectedTerms: _item.protectedNames,
+                  ),
               if (id != null) _InfoRow(strings.detailId, id),
             ],
           ),
@@ -140,10 +177,21 @@ class _DetailSheetState extends State<DetailSheet> {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow(this.label, this.value);
+  const _InfoRow(
+    this.label,
+    this.value, {
+    this.translateLabel = false,
+    this.translateValue = false,
+    this.translator,
+    this.protectedTerms = const [],
+  });
 
   final String label;
   final String value;
+  final bool translateLabel;
+  final bool translateValue;
+  final DescriptionTranslation? translator;
+  final List<String> protectedTerms;
 
   @override
   Widget build(BuildContext context) {
@@ -156,10 +204,25 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 100,
-            child: Text(label, style: TextStyle(fontSize: 13, color: p.mut)),
+            child: translateLabel
+                ? LocalizedText(
+                    label,
+                    translator: translator,
+                    protectedTerms: protectedTerms,
+                    sourceLanguageCode: 'en',
+                    style: TextStyle(fontSize: 13, color: p.mut),
+                  )
+                : Text(label, style: TextStyle(fontSize: 13, color: p.mut)),
           ),
           Expanded(
-            child: Text(value, style: valueStyle),
+            child: translateValue
+                ? LocalizedText(
+                    value,
+                    translator: translator,
+                    protectedTerms: protectedTerms,
+                    style: valueStyle,
+                  )
+                : Text(value, style: valueStyle),
           ),
         ],
       ),

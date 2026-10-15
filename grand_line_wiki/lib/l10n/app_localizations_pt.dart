@@ -124,6 +124,28 @@ class AppLocalizationsPt extends AppLocalizations {
       'Esta categoria está indisponível no momento.';
 
   @override
+  String get translationUnavailable =>
+      'Tradução indisponível; exibindo o texto original.';
+
+  @override
+  String get imageUnavailable => 'Não foi possível carregar a imagem.';
+
+  @override
+  String imageSource(String source) {
+    return 'Imagem de $source';
+  }
+
+  @override
+  String commonsImageCredit(Object title, Object author) {
+    return '$title por $author';
+  }
+
+  @override
+  String commonsLicense(Object license) {
+    return 'Licença: $license';
+  }
+
+  @override
   String get categorySagas => 'Sagas';
 
   @override
@@ -290,6 +312,28 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get apiEndpointNotFound =>
       'Esta categoria está indisponível no momento.';
+
+  @override
+  String get translationUnavailable =>
+      'Tradução indisponível; exibindo o texto original.';
+
+  @override
+  String get imageUnavailable => 'Não foi possível carregar a imagem.';
+
+  @override
+  String imageSource(String source) {
+    return 'Imagem de $source';
+  }
+
+  @override
+  String commonsImageCredit(Object title, Object author) {
+    return '$title por $author';
+  }
+
+  @override
+  String commonsLicense(Object license) {
+    return 'Licença: $license';
+  }
 
   @override
   String get categorySagas => 'Sagas';

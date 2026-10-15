@@ -63,6 +63,29 @@
   "apiUnexpected": "Unexpected response from the API.",
   "apiItemNotFound": "Item not found.",
   "apiEndpointNotFound": "This category is currently unavailable.",
+  "translationUnavailable": "Translation unavailable; showing the original text.",
+  "imageUnavailable": "Image could not be loaded.",
+  "imageSource": "Image from {source}",
+  "@imageSource": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "commonsImageCredit": "{title} by {author}",
+  "@commonsImageCredit": {
+    "placeholders": {
+      "title": {},
+      "author": {}
+    }
+  },
+  "commonsLicense": "License: {license}",
+  "@commonsLicense": {
+    "placeholders": {
+      "license": {}
+    }
+  },
   "categorySagas": "Sagas",
   "categoryFruits": "Devil Fruits",
   "categoryChapters": "Chapters",

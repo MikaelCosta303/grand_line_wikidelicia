@@ -123,6 +123,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get apiEndpointNotFound => 'This category is currently unavailable.';
 
   @override
+  String get translationUnavailable =>
+      'Translation unavailable; showing the original text.';
+
+  @override
+  String get imageUnavailable => 'Image could not be loaded.';
+
+  @override
+  String imageSource(String source) {
+    return 'Image from $source';
+  }
+
+  @override
+  String commonsImageCredit(Object title, Object author) {
+    return '$title by $author';
+  }
+
+  @override
+  String commonsLicense(Object license) {
+    return 'License: $license';
+  }
+
+  @override
   String get categorySagas => 'Sagas';
 
   @override

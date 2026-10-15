@@ -12,10 +12,14 @@ App Flutter baseado no wireframe mobile de alta fidelidade. Consome a
 - **Tema:** botão no topo alterna claro e escuro, e a escolha fica salva.
 - **Idiomas:** menu no topo alterna entre português (Brasil), inglês e francês; a escolha fica salva.
 
-Os nomes próprios (personagens, frutas, técnicas e outros) permanecem como na
-obra em todos os idiomas. O idioma da API seleciona descrições e outros textos
-traduzíveis: francês usa `/fr`, inglês usa `/en`; pt-BR usa textos em inglês,
-pois a API não oferece português.
+Nomes próprios, siglas e nomenclaturas canônicas permanecem no original. A
+interface e os textos descritivos dos itens acompanham o idioma selecionado:
+francês usa os dados `/fr`, inglês usa `/en`, e em pt-BR os campos textuais da
+API são traduzidos no próprio aparelho. Como a API pode misturar idiomas até
+no mesmo registro de personagem, o app identifica o idioma de cada texto antes
+de traduzi-lo. Termos identificados como nomes e siglas são preservados. O
+primeiro uso de cada idioma de tradução precisa de internet para baixar os
+modelos; depois, a tradução funciona no dispositivo.
 
 ## Como rodar
 
@@ -76,7 +80,23 @@ chaves como `image`, `img`, `picture`, `thumbnail` e `filename`. Atualmente,
 as frutas incluem imagens no campo `filename`; os dados consultados de
 personagens, arcos e espadas não incluem retratos ou ilustrações em cada item.
 Quando a resposta não tem imagem, o card mostra o emoji da categoria. A
-normalização desses campos fica em `lib/models/wiki_item.dart`.
+normalização desses campos fica em `lib/models/wiki_item.dart`. Se a API não
+fornecer uma imagem, o app procura pelo nome original no Wikimedia Commons e só
+usa arquivos com licença CC0, domínio público, CC BY ou CC BY-SA. Imagens
+carregadas e seus créditos/licenças ficam salvos no armazenamento do app para
+reutilização offline. A busca exige conexão na primeira carga, e nem todos os
+itens necessariamente têm uma imagem apropriada; os itens sem imagem continuam
+com o emoji de categoria. Para reduzir correspondências incorretas, o arquivo
+precisa ter o nome canônico completo no título e evidências de que pertence a
+One Piece e à categoria do item; se esses sinais não forem suficientes, o app
+prefere não exibir uma imagem.
+
+Antes do Commons, o app consulta também a API MediaWiki do One Piece Wiki
+(Fandom) pelo título exato do artigo e usa a imagem principal apenas quando a
+página do arquivo declara explicitamente uma licença reutilizável aceita.
+Arquivos com licenças ausentes, não verificadas ou de uso restrito são
+descartados. Para imagens de ambas as fontes, o detalhe mostra os links e
+créditos/licenças; o cache é removido ao limpar os dados do app ou desinstalá-lo.
 
 ## Estrutura
 
